@@ -6,9 +6,9 @@ type DingDingConfig struct {
 	secret      string
 }
 
-func NewDingDingConfig(webhookURL, accessToken, secret string) *DingDingConfig {
+func NewDingDingConfig(accessToken, secret string) *DingDingConfig {
 	return &DingDingConfig{
-		webhookURL:  webhookURL,
+		webhookURL:  "https://oapi.dingtalk.com/robot/send",
 		accessToken: accessToken,
 		secret:      secret,
 	}
