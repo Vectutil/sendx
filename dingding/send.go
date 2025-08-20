@@ -69,7 +69,7 @@ func (d DingDingConfig) SendMsg(ctx context.Context, opts ...MessageOption) erro
 
 	code, ok := respBody["errcode"].(float64)
 	if !ok {
-		return errors.New("errcode is not a string")
+		return errors.New("errcode is not a float64")
 	}
 	if code != 0 {
 		return errors.New(fmt.Sprintf("send message failed, errcode: %v, errmsg: %s", code, respBody["errmsg"].(string)))
