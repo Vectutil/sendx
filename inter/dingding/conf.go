@@ -1,5 +1,7 @@
 package dingding
 
+import "sendx/inter"
+
 type DingDingConfig struct {
 	webhookURL  string
 	accessToken string
@@ -14,7 +16,8 @@ func NewDingDingConfig(accessToken, secret string) *DingDingConfig {
 	}
 }
 
-type messageConfig struct {
+type MessageConfig struct {
+	inter.DefaultSendConf
 	MsgType        string `json:"msgtype"`
 	Content        string `json:"content,omitempty"`
 	Title          string `json:"title,omitempty"`
@@ -31,58 +34,58 @@ type messageConfig struct {
 	IsAtAll bool `json:"isAtAll,omitempty"`
 }
 
-type MessageOption func(*messageConfig)
+type MessageOption func(*MessageConfig)
 
 func WithAtMobiles(mobiles []string) MessageOption {
-	return func(c *messageConfig) {
+	return func(c *MessageConfig) {
 		c.At.AtMobiles = mobiles
 	}
 }
 
 func WithAtUserIds(userIds []string) MessageOption {
-	return func(c *messageConfig) {
+	return func(c *MessageConfig) {
 		c.At.AtUserIds = userIds
 	}
 }
 
 func WithAtAll() MessageOption {
-	return func(c *messageConfig) {
+	return func(c *MessageConfig) {
 		c.IsAtAll = true
 	}
 }
 
-func WithTextMessage(content string) MessageOption {
-	return func(c *messageConfig) {
-		c.MsgType = "text"
-		c.Content = content
+func TextMessage(content string) MessageConfig {
+	return MessageConfig{
+		MsgType: "text",
+		Content: content,
 	}
 }
 
-func WithMarkdownMessage(title, text string) MessageOption {
-	return func(c *messageConfig) {
-		c.MsgType = "markdown"
-		c.Title = title
-		c.Text = text
+func MarkdownMessage(title, text string) MessageConfig {
+	return MessageConfig{
+		MsgType: "markdown",
+		Title:   title,
+		Text:    text,
 	}
 }
 
-func WithLinkMessage(title, text, messageUrl, picUrl string) MessageOption {
-	return func(c *messageConfig) {
-		c.MsgType = "link"
-		c.Title = title
-		c.Text = text
-		c.MessageUrl = messageUrl
-		c.PicUrl = picUrl
+func LinkMessage(title, text, messageUrl, picUrl string) MessageConfig {
+	return MessageConfig{
+		MsgType:    "link",
+		Title:      title,
+		Text:       text,
+		MessageUrl: messageUrl,
+		PicUrl:     picUrl,
 	}
 }
 
-func WithActionCardMessage(title, text, singleTitle, singleURL, btnOrientation string) MessageOption {
-	return func(c *messageConfig) {
-		c.MsgType = "actionCard"
-		c.Title = title
-		c.Text = text
-		c.SingleTitle = singleTitle
-		c.SingleURL = singleURL
-		c.BtnOrientation = btnOrientation
+func ActionCardMessage(title, text, singleTitle, singleURL, btnOrientation string) MessageConfig {
+	return MessageConfig{
+		MsgType:        "actionCard",
+		Title:          title,
+		Text:           text,
+		SingleTitle:    singleTitle,
+		SingleURL:      singleURL,
+		BtnOrientation: btnOrientation,
 	}
 }

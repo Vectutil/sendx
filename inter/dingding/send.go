@@ -5,30 +5,26 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
 	"net/url"
+	"sendx/inter"
 	"strconv"
-	"strings"
 	"time"
 )
 
-func (d DingDingConfig) SendMsg(ctx context.Context, opts ...MessageOption) error {
-	config := messageConfig{}
-
-	for _, opt := range opts {
-		if config.MsgType != "" {
-			continue
+func (d DingDingConfig) SendMsg(ctx context.Context, sendInter inter.SendInter, opts ...MessageOption) error {
+	var param any
+	config, ok := sendInter.(MessageConfig)
+	if ok {
+		for _, opt := range opts {
+			opt(&config)
 		}
-		opt(&config)
+		param = config
+	} else {
+		param = sendInter
 	}
 
-	if config.MsgType == "" {
-		return errors.New("message type is required")
-	}
 	timestamp := time.Now().UnixNano() / 1e6
 	timestampStr := strconv.FormatInt(timestamp, 10)
 
@@ -45,24 +41,7 @@ func (d DingDingConfig) SendMsg(ctx context.Context, opts ...MessageOption) erro
 		url.QueryEscape(signature),
 	)
 
-	jsonData, err := json.Marshal(config)
-	if err != nil {
-		return err
-	}
-
-	resp, err := http.Post(signedURL, "application/json", strings.NewReader(string(jsonData)))
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	var respBody map[string]interface{}
-	err = json.Unmarshal(body, &respBody)
+	respBody, err := sendInter.SendHttpRequest(signedURL, param)
 	if err != nil {
 		return err
 	}
