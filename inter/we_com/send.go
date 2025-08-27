@@ -22,6 +22,10 @@ func (d WeComConfig) SendMsg(ctx context.Context, sendInter inter.SendInter, opt
 		for _, opt := range opts {
 			opt(&config)
 		}
+		config.Content["isAtAll"] = config.IsAtAll
+		config.Content["mentioned_list"] = config.MentionedList
+		config.Content["mentioned_mobile_list"] = config.MentionedMobileList
+
 		param = config
 	} else {
 		param = sendInter

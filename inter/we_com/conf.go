@@ -1,6 +1,9 @@
 package we_com
 
-import "sendx/inter"
+import (
+	"encoding/json"
+	"sendx/inter"
+)
 
 type WeComConfig struct {
 	webhookURL string
@@ -16,22 +19,20 @@ func NewWeComConfig(key string) *WeComConfig {
 
 type MessageConfig struct {
 	inter.DefaultSendConf
-	MsgType             string            `json:"msgtype"`                         // 消息类型
-	Content             map[string]string `json:"text,omitempty"`                  // 消息内容 必须是utf8编码
-	MentionedList       []string          `json:"mentioned_list,omitempty"`        // userid的列表，提醒群中的指定成员(@某个成员)，@all表示提醒所有人，如果开发者获取不到userid，可以使用mentioned_mobile_list
-	MentionedMobileList []string          `json:"mentioned_mobile_list,omitempty"` // 手机号列表，提醒手机号对应的群成员(@某个成员)，@all表示提醒所有人
-	Base64              string            `json:"base64,omitempty"`                // 图片内容的base64编码 注：图片（base64编码前）最大不能超过2M，支持JPG,PNG格式
-	Md5                 string            `json:"md5,omitempty"`                   // 图片内容（base64编码前）的md5值
-	Articles            string            `json:"articles,omitempty"`              // 图文消息，一个图文消息支持1到8条图文
-	Title               string            `json:"title,omitempty"`                 // 标题，不超过128个字节，超过会自动截断
-	Description         string            `json:"description,omitempty"`           // 描述，不超过512个字节，超过会自动截断
-	Url                 string            `json:"url,omitempty"`                   // 点击后跳转的链接。
-	MediaID             string            `json:"media_id,omitempty"`              // 文件id，通过下文的文件上传接口获取
-	PicUrl              string            `json:"picUrl,omitempty"`                // 图文消息的图片链接，支持JPG、PNG格式，较好的效果为大图 1068*455，小图150*150。
-	IsAtAll             bool              `json:"isAtAll,omitempty"`
-	TemplateCard        *TextNoticeCard   `json:"template_card,omitempty"` // 具体的模版卡片参数
-	FileType            string            `json:"type,omitempty"`          // 文件类型，分别有语音(voice)和普通文件(file)
-	Key                 string            `json:"key,omitempty"`
+	MsgType             string                 `json:"msgtype"` // 消息类型
+	Content             map[string]interface{} `json:"-"`
+	MentionedList       []string               `json:"-"` // userid的列表，提醒群中的指定成员(@某个成员)，@all表示提醒所有人，如果开发者获取不到userid，可以使用mentioned_mobile_list
+	MentionedMobileList []string               `json:"-"` // 手机号列表，提醒手机号对应的群成员(@某个成员)，@all表示提醒所有人
+	IsAtAll             bool                   `json:"-"`
+	FileType            string                 `json:"-"` // 文件类型，分别有语音(voice)和普通文件(file)
+}
+
+func (m MessageConfig) MarshalJSON() ([]byte, error) {
+	data := map[string]interface{}{
+		"msgtype": m.MsgType,
+	}
+	data[m.MsgType] = m.Content
+	return json.Marshal(data)
 }
 
 // TextNoticeCard 文本通知模版卡片
@@ -119,7 +120,6 @@ func WithAtMentionedMobileList(mentionedMobileList []string) MessageOption {
 func WithAtAll() MessageOption {
 	return func(c *MessageConfig) {
 		c.MentionedMobileList = append(c.MentionedMobileList, "@all")
-		c.MentionedList = append(c.MentionedList, "@all")
 		c.IsAtAll = true
 	}
 }
@@ -127,7 +127,7 @@ func WithAtAll() MessageOption {
 func TextMessage(content string) MessageConfig {
 	return MessageConfig{
 		MsgType: "text",
-		Content: map[string]string{
+		Content: map[string]interface{}{
 			"content": content,
 		},
 	}
@@ -136,8 +136,8 @@ func TextMessage(content string) MessageConfig {
 func MarkdownMessage(content string) MessageConfig {
 	return MessageConfig{
 		MsgType: "markdown",
-		Content: map[string]string{
-			"markdown": content,
+		Content: map[string]interface{}{
+			"content": content,
 		},
 	}
 }
@@ -145,7 +145,7 @@ func MarkdownMessage(content string) MessageConfig {
 func MarkdownV2Message(content string) MessageConfig {
 	return MessageConfig{
 		MsgType: "markdown_v2",
-		Content: map[string]string{
+		Content: map[string]interface{}{
 			"markdown_v2": content,
 		},
 	}
@@ -154,40 +154,133 @@ func MarkdownV2Message(content string) MessageConfig {
 func ImageMessage(base64, md5 string) MessageConfig {
 	return MessageConfig{
 		MsgType: "image",
-		Base64:  base64,
-		Md5:     md5,
+		Content: map[string]interface{}{
+			"base64": base64,
+			"md5":    md5,
+		},
 	}
 }
 
-func NewsMessage(articles, title, url, description, picUrl string) MessageConfig {
+type Articles struct {
+	Title       string `json:"title"`
+	URL         string `json:"url"`
+	Description string `json:"description"`
+	PicURL      string `json:"picurl"`
+}
+
+func NewsMessage(articles []Articles) MessageConfig {
 	return MessageConfig{
-		MsgType:     "news",
-		Articles:    articles,
-		Title:       title,
-		Url:         url,
-		Description: description,
-		PicUrl:      picUrl,
+		MsgType: "news",
+		Content: map[string]interface{}{
+			"articles": func() []map[string]interface{} {
+				var _articles = make([]map[string]interface{}, 0)
+				for _, item := range articles {
+					_articles = append(_articles, map[string]interface{}{
+						"title":       item.Title,
+						"url":         item.URL,
+						"description": item.Description,
+						"picurl":      item.PicURL,
+					})
+				}
+				return _articles
+			}(),
+		},
 	}
 }
 
 func FileMessage(mediaID string) MessageConfig {
 	return MessageConfig{
 		MsgType: "file",
-		MediaID: mediaID,
+		Content: map[string]interface{}{
+			"media_id": mediaID,
+		},
 	}
 }
 
 func VoiceMessage(mediaID string) MessageConfig {
 	return MessageConfig{
 		MsgType: "voice",
-		MediaID: mediaID,
+		Content: map[string]interface{}{
+			"media_id": mediaID,
+		},
 	}
 }
 
-func TemplateCardMessage(templateCard *TextNoticeCard) MessageConfig {
+func TemplateCardMessage(card TextNoticeCard) MessageConfig {
 	return MessageConfig{
-		MsgType:      "template_card",
-		TemplateCard: templateCard,
+		MsgType: "template_card",
+		Content: map[string]interface{}{
+			"msgtype":   "template_card",
+			"card_type": card.CardType,
+			"source": map[string]interface{}{
+				"icon_url":   card.Source.IconURL,
+				"desc":       card.Source.Desc,
+				"desc_color": card.Source.DescColor,
+			},
+			"main_title": map[string]interface{}{
+				"title": card.MainTitle.Title,
+				"desc":  card.MainTitle.Desc,
+			},
+			"emphasis_content": map[string]interface{}{
+				"title": card.EmphasisContent.Title,
+				"desc":  card.EmphasisContent.Desc,
+			},
+			"quote_area": map[string]interface{}{
+				"type":       card.QuoteArea.Type,
+				"url":        card.QuoteArea.URL,
+				"appid":      card.QuoteArea.AppID,
+				"pagepath":   card.QuoteArea.PagePath,
+				"title":      card.QuoteArea.Title,
+				"quote_text": card.QuoteArea.QuoteText,
+			},
+			"sub_title_text": card.SubTitleText,
+			"horizontal_content_list": func() []map[string]interface{} {
+				var items []map[string]interface{}
+				for _, h := range card.HorizontalContentList {
+					item := map[string]interface{}{
+						"keyname": h.KeyName,
+						"value":   h.Value,
+					}
+					if h.Type != 0 {
+						item["type"] = h.Type
+					}
+					if h.URL != "" {
+						item["url"] = h.URL
+					}
+					if h.MediaID != "" {
+						item["media_id"] = h.MediaID
+					}
+					items = append(items, item)
+				}
+				return items
+			}(),
+			"jump_list": func() []map[string]interface{} {
+				var jumps []map[string]interface{}
+				for _, j := range card.JumpList {
+					jump := map[string]interface{}{
+						"type":  j.Type,
+						"title": j.Title,
+					}
+					if j.URL != "" {
+						jump["url"] = j.URL
+					}
+					if j.AppID != "" {
+						jump["appid"] = j.AppID
+					}
+					if j.PagePath != "" {
+						jump["pagepath"] = j.PagePath
+					}
+					jumps = append(jumps, jump)
+				}
+				return jumps
+			}(),
+			"card_action": map[string]interface{}{
+				"type":     card.CardAction.Type,
+				"url":      card.CardAction.URL,
+				"appid":    card.CardAction.AppID,
+				"pagepath": card.CardAction.PagePath,
+			},
+		},
 	}
 }
 
