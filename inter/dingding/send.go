@@ -7,8 +7,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/Vectutil/sendx/inter"
 	"net/url"
-	"sendx/inter"
 	"strconv"
 	"time"
 )

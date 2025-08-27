@@ -6,11 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/Vectutil/sendx/inter"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"os"
-	"sendx/inter"
 )
 
 func (d WeComConfig) SendMsg(ctx context.Context, sendInter inter.SendInter, opts ...MessageOption) error {

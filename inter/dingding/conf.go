@@ -1,6 +1,8 @@
 package dingding
 
-import "sendx/inter"
+import (
+	"github.com/Vectutil/sendx/inter"
+)
 
 type DingDingConfig struct {
 	webhookURL  string

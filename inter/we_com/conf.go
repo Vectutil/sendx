@@ -2,7 +2,7 @@ package we_com
 
 import (
 	"encoding/json"
-	"sendx/inter"
+	"github.com/Vectutil/sendx/inter"
 )
 
 type WeComConfig struct {
