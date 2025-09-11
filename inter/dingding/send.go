@@ -41,7 +41,7 @@ func (d DingDingConfig) SendMsg(ctx context.Context, sendInter inter.SendInter, 
 		url.QueryEscape(signature),
 	)
 
-	respBody, err := sendInter.SendHttpRequest(signedURL, param)
+	respBody, err := sendInter.SendHttpRequest(ctx, signedURL, param)
 	if err != nil {
 		return err
 	}

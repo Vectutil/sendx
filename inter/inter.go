@@ -1,6 +1,7 @@
 package inter
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -8,19 +9,25 @@ import (
 )
 
 type SendInter interface {
-	SendHttpRequest(url string, param any) (map[string]interface{}, error)
+	SendHttpRequest(ctx context.Context, url string, param any) (map[string]interface{}, error)
 }
 
 type DefaultSendConf struct {
 }
 
-func (d DefaultSendConf) SendHttpRequest(url string, param any) (map[string]interface{}, error) {
+func (d DefaultSendConf) SendHttpRequest(ctx context.Context, url string, param any) (map[string]interface{}, error) {
 	jsonData, err := json.Marshal(param)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := http.Post(url, "application/json", strings.NewReader(string(jsonData)))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, strings.NewReader(string(jsonData)))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

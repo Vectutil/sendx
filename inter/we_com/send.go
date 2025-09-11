@@ -31,7 +31,7 @@ func (d WeComConfig) SendMsg(ctx context.Context, sendInter inter.SendInter, opt
 		param = sendInter
 	}
 
-	respBody, err := sendInter.SendHttpRequest(fmt.Sprintf("%s?key=%s", d.webhookURL, d.key), param)
+	respBody, err := sendInter.SendHttpRequest(ctx, fmt.Sprintf("%s?key=%s", d.webhookURL, d.key), param)
 	if err != nil {
 		return err
 	}

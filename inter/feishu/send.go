@@ -22,7 +22,7 @@ func (d *FeishuConfig) SendMsg(ctx context.Context, sendInter inter.SendInter, o
 		param = sendInter
 	}
 
-	respBody, err := sendInter.SendHttpRequest(fmt.Sprintf("%s%s", d.webhookURL, d.key), param)
+	respBody, err := sendInter.SendHttpRequest(ctx, fmt.Sprintf("%s%s", d.webhookURL, d.key), param)
 	if err != nil {
 		return err
 	}
