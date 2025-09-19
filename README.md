@@ -7,7 +7,7 @@
 
 ## 功能特性
 
-✅ 多平台支持：企业微信/钉钉/飞书/飞机  
+✅ 多平台支持：企业微信/钉钉/飞书
 ✅ 多种消息类型：文本/卡片/文件/图文  
 ✅ 安全认证：支持签名校验  
 ✅ 媒体管理：文件上传API  
@@ -19,29 +19,33 @@
   go get -u github.com/Vectutil/sendx
 ```
 
-## 企业微信示例
+## 快速开始
+
+### 企业微信示例
 
 ```go
-    wc := we_com.NewWeComConfig("YOUR_API_KEY")
-    
-    // 发送文本消息
-    err := wc.SendMsg(context.Background(),
+import (
+    "context"
+    "github.com/Vectutil/sendx/we_com"
+)
+
+wc := we_com.NewWeComConfig("YOUR_API_KEY")
+
+// 发送文本消息
+err := wc.SendMsg(context.Background(),
     we_com.TextMessage("系统告警通知"),
     we_com.WithAtAll(),
-    )
+)
 ```
 
-支持的消息类型：
-- `TextNoticeCard` 通知卡片
-- `MarkdownV2Message` Markdownv2格式
-- `FileMessage` 文件消息
-- `TemplateCardMessage` 模板卡片
-- `...` 
-
-## 钉钉示例
+### 钉钉示例
 
 ```go
-// 初始化配置
+import (
+    "context"
+    "github.com/Vectutil/sendx/dingding"
+)
+
 dd := dingding.NewDingDingConfig(
     "YOUR_ACCESS_TOKEN",
     "YOUR_SECRET",
@@ -53,11 +57,43 @@ err := dd.SendMsg(context.Background(),
 )
 ```
 
+### 飞书示例
+
+```go
+import (
+    "context"
+    "github.com/Vectutil/sendx/feishu"
+)
+
+fs := feishu.NewFeishuConfig("YOUR_APP_ID", "YOUR_APP_SECRET")
+
+err := fs.SendMsg(context.Background(),
+    feishu.TextMessage("飞书推送测试")
+)
+```
+
+## 支持的消息类型
+
+- `TextMessage` 文本消息
+- `MarkdownMessage` Markdown 格式
+- `FileMessage` 文件消息
+- `TemplateCardMessage` 模板卡片
+- `TextNoticeCard` 通知卡片
+- `MarkdownV2Message` MarkdownV2 格式
+- ...
+
+## 测试
+
+```sh
+  go test ./...
+```
+
 ## 贡献指南
 
-1. Fork仓库并创建分支
-2. 提交测试用例
-3. 发起Pull Request
+1. Fork 仓库并创建分支
+2. 编写并提交测试用例
+3. 发起 Pull Request
 
 ## 许可证
+
 [MIT License](/LICENSE)
