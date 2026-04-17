@@ -3,7 +3,7 @@
 ![Go Version](https://img.shields.io/badge/go-1.24-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-企业微信/钉钉消息推送SDK，提供多种消息类型支持，包含文本、Markdown、图文、文件等格式。
+企业微信/钉钉/飞书消息推送 SDK，提供多种消息类型支持，包含文本、 Markdown、图文、文件等格式。
 
 ## 功能特性
 
@@ -26,7 +26,7 @@
 ```go
 import (
     "context"
-    "github.com/Vectutil/sendx/we_com"
+    "github.com/Vectutil/sendx/inter/we_com"
 )
 
 wc := we_com.NewWeComConfig("YOUR_API_KEY")
@@ -43,7 +43,7 @@ err := wc.SendMsg(context.Background(),
 ```go
 import (
     "context"
-    "github.com/Vectutil/sendx/dingding"
+    "github.com/Vectutil/sendx/inter/dingding"
 )
 
 dd := dingding.NewDingDingConfig(
@@ -62,10 +62,10 @@ err := dd.SendMsg(context.Background(),
 ```go
 import (
     "context"
-    "github.com/Vectutil/sendx/feishu"
+    "github.com/Vectutil/sendx/inter/feishu"
 )
 
-fs := feishu.NewFeishuConfig("YOUR_APP_ID", "YOUR_APP_SECRET")
+fs := feishu.NewFeishuConfig("YOUR_WEBHOOK_KEY")
 
 err := fs.SendMsg(context.Background(),
     feishu.TextMessage("飞书推送测试")
@@ -78,9 +78,7 @@ err := fs.SendMsg(context.Background(),
 - `MarkdownMessage` Markdown 格式
 - `FileMessage` 文件消息
 - `TemplateCardMessage` 模板卡片
-- `TextNoticeCard` 通知卡片
 - `MarkdownV2Message` MarkdownV2 格式
-- ...
 
 ## 测试
 

@@ -2,99 +2,73 @@ package we_com
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
 func TestTextSendMsg(t *testing.T) {
-	ddc := NewWeComConfig("a1bb7d9d-8380-4182-8e26-6670d2ef60e6")
-	err := ddc.SendMsg(context.Background(), TextMessage("hong i love you"), WithAtAll())
-	if err != nil {
-		t.Fatal(err)
-	}
-}
+	t.Parallel()
 
-func TestSendMsg(t *testing.T) {
-	ddc := NewWeComConfig("a1bb7d9d-8380-4182-8e26-6670d2ef60e6")
-	err := ddc.SendMsg(context.Background(), MarkdownMessage("# 一、标题\n## 二级标题\n### 三级标题\n# 二、字体\n*斜体*\n\n**加粗**\n# 三、列表 \n- 无序列表 1 \n- 无序列表 2\n  - 无序列表 2.1\n  - 无序列表 2.2\n1. 有序列表 1\n2. 有序列表 2\n# 四、引用\n> 一级引用\n>>二级引用\n>>>三级引用\n# 五、链接\n[这是一个链接](https:work.weixin.qq.com/api/doc)\n![](https://res.mail.qq.com/node/ww/wwopenmng/images/independent/doc/test_pic_msg1.png)\n# 六、分割线\n\n---\n# 七、代码\n`这是行内代码`\n```\n这是独立代码块\n```\n\n# 八、表格\n| 姓名 | 文化衫尺寸 | 收货地址 |\n| :----- | :----: | -------: |\n| 张三 | S | 广州 |\n| 李四 | L | 深圳 |\n"))
-	if err != nil {
-		t.Fatal(err)
-	}
-}
+	var got map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
 
-func TestCardSendMsg(t *testing.T) {
-	ddc := NewWeComConfig("a1bb7d9d-8380-4182-8e26-6670d2ef60e6")
-	err := ddc.SendMsg(context.Background(), TemplateCardMessage(TextNoticeCard{
-		CardType: "text_notice",
-		Source: &CardSource{
-			IconURL:   "https://wework.qpic.cn/wwpic/252813_jOfDHtcISzuodLa_1629280209/0",
-			Desc:      "企业微信",
-			DescColor: 0,
-		},
-		MainTitle: CardMainTitle{
-			Title: "欢迎使用企业微信",
-			Desc:  "您的好友正在邀请您加入企业微信",
-		},
-		EmphasisContent: &EmphasisContent{
-			Title: "100",
-			Desc:  "数据含义",
-		},
-		QuoteArea: &QuoteArea{
-			Type:      1,
-			URL:       "https://work.weixin.qq.com/?from=openApi",
-			AppID:     "APPID",
-			PagePath:  "PAGEPATH",
-			Title:     "引用文本标题",
-			QuoteText: "Jack：企业微信真的很好用~\nBalian：超级好的一款软件！",
-		},
-		SubTitleText: "下载企业微信还能抢红包！",
-		HorizontalContentList: []HorizontalContent{
-			{
-				KeyName: "邀请人",
-				Value:   "张三",
-			},
-			{
-				KeyName: "企微官网",
-				Value:   "点击访问",
-				Type:    1,
-				URL:     "https://work.weixin.qq.com/?from=openApi",
-			},
-		},
-		JumpList: []JumpItem{
-			{
-				Type:  1,
-				URL:   "https://work.weixin.qq.com/?from=openApi",
-				Title: "企业微信官网",
-			},
-		},
-		CardAction: CardAction{
-			Type:     1,
-			URL:      "https://work.weixin.qq.com/?from=openApi",
-			AppID:    "APPID",
-			PagePath: "PAGEPATH",
-		},
+		if r.Method != http.MethodPost {
+			t.Fatalf("unexpected method: %s", r.Method)
+		}
+		if r.URL.Query().Get("key") != "test-key" {
+			t.Fatalf("unexpected key: %s", r.URL.Query().Get("key"))
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&got); err != nil {
+			t.Fatalf("decode request: %v", err)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"errcode":0}`))
 	}))
+	defer server.Close()
+
+	config := NewWeComConfig("test-key")
+	config.webhookURL = server.URL
+
+	err := config.SendMsg(context.Background(), TextMessage("hong i love you"), WithAtAll())
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("SendMsg returned error: %v", err)
+	}
+
+	if got["msgtype"] != "text" {
+		t.Fatalf("unexpected msg type: %v", got["msgtype"])
+	}
+	text, ok := got["text"].(map[string]any)
+	if !ok {
+		t.Fatalf("unexpected text payload: %#v", got["text"])
+	}
+	if text["content"] != "hong i love you" {
+		t.Fatalf("unexpected content: %v", text["content"])
+	}
+	mentioned, ok := text["mentioned_mobile_list"].([]any)
+	if !ok || len(mentioned) != 1 || mentioned[0] != "@all" {
+		t.Fatalf("unexpected mentioned list: %#v", text["mentioned_mobile_list"])
 	}
 }
 
-func TestNewsSendMsg(t *testing.T) {
-	ddc := NewWeComConfig("a1bb7d9d-8380-4182-8e26-6670d2ef60e6")
-	err := ddc.SendMsg(context.Background(), NewsMessage([]Articles{
-		{
-			Title:       "标题",
-			URL:         "https://www.baidu.com",
-			Description: "描述",
-			PicURL:      "https://res.mail.qq.com/node/ww/wwopenmng/images/independent/doc/test_pic_msg1.png",
-		},
-		{
-			Title:       "标题2",
-			URL:         "https://www.baidu1.com",
-			Description: "描述2",
-			PicURL:      "https://res.mail.qq.com/node/ww/wwopenmng/images/independent/doc/test_pic_msg1.png",
-		},
+func TestSendMsgReturnsPlatformError(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"errcode":400,"errmsg":"failed"}`))
 	}))
-	if err != nil {
-		t.Fatal(err)
+	defer server.Close()
+
+	config := NewWeComConfig("test-key")
+	config.webhookURL = server.URL
+
+	err := config.SendMsg(context.Background(), MarkdownMessage("hello"))
+	if err == nil {
+		t.Fatal("expected error")
 	}
 }

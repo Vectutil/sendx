@@ -46,12 +46,20 @@ func (d DingDingConfig) SendMsg(ctx context.Context, sendInter inter.SendInter, 
 		return err
 	}
 
-	code, ok := respBody["errcode"].(float64)
-	if !ok {
-		return errors.New("errcode is not a float64")
+	code, err := responseCode(respBody, "errcode")
+	if err != nil {
+		return err
 	}
 	if code != 0 {
 		return errors.New(fmt.Sprintf("send message failed, errcode: %v, errmsg: %s", code, respBody["errmsg"].(string)))
 	}
 	return nil
+}
+
+func responseCode(respBody map[string]interface{}, key string) (float64, error) {
+	code, ok := respBody[key].(float64)
+	if !ok {
+		return 0, fmt.Errorf("%s is not a float64", key)
+	}
+	return code, nil
 }

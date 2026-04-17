@@ -1,6 +1,9 @@
 package feishu
 
-import "github.com/Vectutil/sendx/inter"
+import (
+	"encoding/json"
+	"github.com/Vectutil/sendx/inter"
+)
 
 const (
 	MsgTypeText        = "text"        // 文本
@@ -32,9 +35,13 @@ type MessageOption func(*MessageConfig)
 
 type MessageConfig struct {
 	inter.DefaultSendConf
-	MsgType  string                       `json:"msg_type"`
-	Content  FeishuWebhookRequestContent  `json:"content"`
-	Interact FeishuWebhookRequestInteract `json:"card"`
+	MsgType   string                       `json:"msg_type"`
+	Content   FeishuWebhookRequestContent  `json:"content,omitempty"`
+	Interact  FeishuWebhookRequestInteract `json:"-"`
+	ImageKey  string                       `json:"-"`
+	ShareChat string                       `json:"-"`
+	ShareUser string                       `json:"-"`
+	Card      map[string]any               `json:"-"`
 }
 
 type FeishuWebhookRequestInteract struct {
@@ -72,4 +79,29 @@ type ZhCnContent struct {
 	UserId   string `json:"user_id,omitempty"`
 	UserName string `json:"user_name,omitempty"`
 	ImageKey string `json:"image_key,omitempty"`
+}
+
+func (m MessageConfig) MarshalJSON() ([]byte, error) {
+	data := map[string]any{
+		"msg_type": m.MsgType,
+	}
+
+	switch m.MsgType {
+	case MsgTypeText, MsgTypePost:
+		data["content"] = m.Content
+	case MsgTypeImage:
+		data["content"] = map[string]any{"image_key": m.ImageKey}
+	case MsgTypeShareChat:
+		data["content"] = map[string]any{"share_chat_id": m.ShareChat}
+	case MsgTypeShareUser:
+		data["content"] = map[string]any{"share_user_id": m.ShareUser}
+	case MsgTypeInteractive:
+		if len(m.Card) > 0 {
+			data["card"] = m.Card
+		} else {
+			data["card"] = map[string]any{"elements": m.Interact.Elements}
+		}
+	}
+
+	return json.Marshal(data)
 }
